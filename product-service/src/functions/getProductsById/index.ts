@@ -11,7 +11,7 @@ export const getProductsById = {
         responses: {
           200: {
             description: 'Success',
-            bodyType: 'Products',
+            bodyType: 'Product',
           },
         },
       },
