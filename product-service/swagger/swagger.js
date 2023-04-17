@@ -20,9 +20,29 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "get Products API response",
             "schema": {
               "$ref": "#/definitions/Products"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "createProduct",
+        "description": "",
+        "operationId": "createProduct.post.products",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "created Product API response",
+            "schema": {
+              "$ref": "#/definitions/Product"
             }
           }
         }
@@ -49,9 +69,9 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "get Product by ID API response",
             "schema": {
-              "$ref": "#/definitions/Products"
+              "$ref": "#/definitions/Product"
             }
           }
         }
@@ -76,13 +96,18 @@
         "price": {
           "title": "Product.price",
           "type": "number"
+        },
+        "count": {
+          "title": "Product.count",
+          "type": "number"
         }
       },
       "required": [
         "id",
         "title",
         "description",
-        "price"
+        "price",
+        "count"
       ],
       "additionalProperties": false,
       "title": "Product",

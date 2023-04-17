@@ -10,7 +10,7 @@ export const getProductsList = {
         cors: true,
         responses: {
           200: {
-            description: 'Success',
+            description: 'get Products API response',
             bodyType: 'Products',
           },
         },
