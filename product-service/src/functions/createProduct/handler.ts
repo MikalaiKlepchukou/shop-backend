@@ -7,20 +7,7 @@ import { marshall } from '@aws-sdk/util-dynamodb';
 import { v4 as uuid } from 'uuid';
 
 import { client } from '../../utils/client';
-
-const validateData = (data: any): boolean => {
-  const { title, description, count, price } = data;
-  return (
-    typeof title === 'string' &&
-    title.length > 0 &&
-    typeof description === 'string' &&
-    description.length > 0 &&
-    typeof count === 'number' &&
-    count > 0 &&
-    typeof price === 'number' &&
-    price > 0
-  );
-};
+import { productDataValidate } from '../../utils/validate';
 
 export const createProduct = async (
   event: APIGatewayProxyEvent
@@ -28,7 +15,7 @@ export const createProduct = async (
   try {
     console.log('createProduct create new product with body: ', event.body);
     const data = JSON.parse(event.body);
-    const isValid = validateData(data);
+    const isValid = productDataValidate(data);
 
     if (!isValid) {
       const errorMessage = {
