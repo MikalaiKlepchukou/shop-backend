@@ -7,6 +7,7 @@ import {
   GetObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
@@ -19,6 +20,7 @@ export const importFileParser = async (
     console.log('importFileParser Lambda triggered, records:', records);
     const bucketName = process.env.S3_BUCKET_NAME;
     const client = new S3Client({ region: 'us-east-1' });
+    const sqsClient = new SQSClient({ region: 'us-east-1' });
 
     for (const record of records) {
       const objectName = record.s3.object.key;
@@ -30,15 +32,18 @@ export const importFileParser = async (
         CopySource: pathToObject,
         Key: newObjectPath,
       };
-      const results = [];
+
       const readableStream = (await client.send(new GetObjectCommand(command)))
         .Body as Readable;
-      readableStream
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', () => {
-          console.log('results: ', results);
-        });
+      readableStream.pipe(csv()).on('data', (data) => {
+        sqsClient.send(
+          new SendMessageCommand({
+            MessageBody: JSON.stringify(data),
+            QueueUrl: process.env.SQS_URL,
+          })
+        );
+      });
+
       await client.send(new CopyObjectCommand(copyCommand));
       await client.send(new DeleteObjectCommand(command));
     }
@@ -51,7 +56,7 @@ export const importFileParser = async (
       body: JSON.stringify(
         {
           error: true,
-          message: 'incoming data parsed and moved to parsed folder',
+          message: 'incoming data parsed and moved to SQS',
         },
         null,
         2

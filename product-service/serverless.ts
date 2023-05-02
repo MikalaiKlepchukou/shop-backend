@@ -2,7 +2,12 @@ import type { AWS } from '@serverless/typescript';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import { getProductsList, getProductsById, createProduct } from '@functions';
+import {
+  getProductsList,
+  getProductsById,
+  createProduct,
+  catalogBatchProcess,
+} from '@functions';
 
 const serverlessConfiguration: AWS = {
   service: 'product-service',
@@ -22,6 +27,8 @@ const serverlessConfiguration: AWS = {
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
       PRODUCTS_DYNAMODB_TABLE: process.env.PRODUCTS_DYNAMODB_TABLE,
       STOCKS_DYNAMODB_TABLE: process.env.STOCKS_DYNAMODB_TABLE,
+      SQS_URL: { Ref: 'SQSQueue' },
+      SNS_ARN: { Ref: 'SNSTopic' },
     },
     iam: {
       role: {
@@ -31,12 +38,64 @@ const serverlessConfiguration: AWS = {
             Action: ['dynamodb:*'],
             Resource: '*',
           },
+          {
+            Effect: 'Allow',
+            Action: ['sqs:*'],
+            Resource: {
+              'Fn::GetAtt': ['SQSQueue', 'Arn'],
+            },
+          },
+          {
+            Effect: 'Allow',
+            Action: ['sns:*'],
+            Resource: {
+              Ref: 'SNSTopic',
+            },
+          },
         ],
       },
     },
   },
-  // import the function via paths
-  functions: { getProductsList, getProductsById, createProduct },
+  resources: {
+    Resources: {
+      SQSQueue: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {
+          QueueName: 'catalogItemsQueue',
+        },
+      },
+      SNSTopic: {
+        Type: 'AWS::SNS::Topic',
+        Properties: {
+          TopicName: 'createProductTopic',
+        },
+      },
+      createProductSNSSubscription: {
+        Type: 'AWS::SNS::Subscription',
+        Properties: {
+          Endpoint: process.env.EMAIL,
+          Protocol: 'email',
+          TopicArn: { Ref: 'SNSTopic' },
+        },
+      },
+      MyNewFilteredProductsSNSSubscription: {
+        Type: 'AWS::SNS::Subscription',
+        Properties: {
+          Endpoint: process.env.ADDITIONAL_EMAIL,
+          Protocol: 'email',
+          TopicArn: { Ref: 'SNSTopic' },
+          FilterPolicyScope: 'MessageBody',
+          FilterPolicy: { price: [{ numeric: ['>=', 105] }] },
+        },
+      },
+    },
+  },
+  functions: {
+    getProductsList,
+    getProductsById,
+    createProduct,
+    catalogBatchProcess,
+  },
   package: { individually: true },
   custom: {
     esbuild: {
