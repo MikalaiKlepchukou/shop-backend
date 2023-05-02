@@ -19,3 +19,4 @@ createProduct: product-service-dev-createProduct
 catalogBatchProcess: product-service-dev-catalogBatchProcess 
 importFileParser: import-service-dev-importFileParser
 importProductsFile: import-service-dev-importProductsFile
+basicAuthorizer: authorization-service-dev-basicAuthorizer
